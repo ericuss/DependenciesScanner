@@ -8,9 +8,6 @@
 
     class Program
     {
-        // const string path = ".";
-        // const string path = "../../../../src/";
-        const string path = "../src/";
         private static DirectoryBuildPropsFileService directoryBuildFileService => new DirectoryBuildPropsFileService();
         private static DependenciesPropsFileService dependenciesFileService => new DependenciesPropsFileService();
         private static CsProjFileService csprojsFileService => new CsProjFileService();
@@ -18,7 +15,10 @@
         static void Main(string[] args)
         {
             Console.WriteLine(" -- Starting...");
-            Console.WriteLine("        Parent directory:" + Directory.GetParent("."));
+
+            args.ToList().ForEach(x => Console.WriteLine("        arg:" + x));
+            var path = GetPath(args);
+            Console.WriteLine($"        Parent directory: {Directory.GetParent(".")}, path: {path}");
 
             Console.WriteLine(" -- Search and/or create dependency.props");
             var dependenciesFile = dependenciesFileService.SearchDependencyPropsAndCreateIfNotExist(path);
@@ -39,6 +39,18 @@
 
             Console.WriteLine(" -- Update dependency.props");
             dependenciesFileService.WriteToFile(dependenciesFile, packages);
+        }
+
+        private static string GetPath(string[] args)
+        {
+            var path = string.Empty;
+            if (args.Any())
+            {
+                path = args[0];
+            }
+
+            if (path.ToCharArray()[path.Length - 1] != '/') path += "/";
+            return path;
         }
     }
 }
