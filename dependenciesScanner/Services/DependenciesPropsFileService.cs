@@ -1,10 +1,10 @@
 ﻿namespace dependenciesScanner.Services
 {
+    using Serilog;
     using System;
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
-    using System.Text.RegularExpressions;
 
     public class DependenciesPropsFileService : FileServiceCore
     {
@@ -59,11 +59,10 @@
                                         .ToList();
 
             var packageVersionLine = linesOfDependencies.FirstOrDefault(line => line.Contains("PropertyGroup Label=\"Package Versions\""));
-            Console.WriteLine(" # Result in dependency.props");
+            Log.Information(" # Result in dependency.props");
             if (packageVersionLine != null)
             {
                 var projectTagIndex = linesOfDependencies.IndexOf(packageVersionLine);
-                // Console.Write("projectTagIndex " + projectTagIndex);
                 contentOfDependencies.InsertRange(projectTagIndex + 1, lines);
             }
             else
@@ -73,7 +72,7 @@
                 contentOfDependencies.InsertRange(contentOfDependencies.Count - 1, lines);
             }
 
-            contentOfDependencies.ForEach(x => Console.WriteLine(x));
+            contentOfDependencies.ForEach(x => Log.Information(x));
             File.WriteAllLines(dependenciesFilePath, contentOfDependencies);
         }
 

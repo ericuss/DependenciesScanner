@@ -4,6 +4,9 @@
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
+    using dependenciesScanner.Models;
+    using Microsoft.Extensions.Configuration;
+    using Serilog;
     using Services;
 
     class Program
@@ -11,46 +14,54 @@
         private static DirectoryBuildPropsFileService directoryBuildFileService => new DirectoryBuildPropsFileService();
         private static DependenciesPropsFileService dependenciesFileService => new DependenciesPropsFileService();
         private static CsProjFileService csprojsFileService => new CsProjFileService();
+        private static AppSettings appSettings;
 
         static void Main(string[] args)
         {
-            Console.WriteLine(" -- Starting...");
+            Initialize(args);
+            Log.Information(" -- Starting...");
+            Log.Information("        settings:{@settings}", appSettings);
+            Log.Information($"        Parent directory: {Directory.GetParent(".")}, path: {appSettings.Path}");
 
-            args.ToList().ForEach(x => Console.WriteLine("        arg:" + x));
-            var path = GetPath(args);
-            Console.WriteLine($"        Parent directory: {Directory.GetParent(".")}, path: {path}");
+            Log.Information(" -- Search and/or create dependency.props");
+            var dependenciesFile = dependenciesFileService.SearchDependencyPropsAndCreateIfNotExist(appSettings.Path);
 
-            Console.WriteLine(" -- Search and/or create dependency.props");
-            var dependenciesFile = dependenciesFileService.SearchDependencyPropsAndCreateIfNotExist(path);
-            Console.WriteLine(" -- Create if not exist the DirectoryBuild.props");
-            directoryBuildFileService.SearchDirectoryBuildPropsAndCreateIfNotExist(path);
+            Log.Information(" -- Create if not exist the DirectoryBuild.props");
+            directoryBuildFileService.SearchDirectoryBuildPropsAndCreateIfNotExist(appSettings.Path);
             var packages = new Dictionary<string, List<string>>();
 
-            Console.WriteLine(" -- Scan packages in dependency.props");
+            Log.Information(" -- Scan packages in dependency.props");
             dependenciesFileService.ScanPackagesFromDependency(dependenciesFile, packages);
 
-            Console.WriteLine(" -- Search all CsProjs");
-            var csProjFiles = csprojsFileService.GetAllCsProjs(path);
-            Console.WriteLine(" -- Scan packages in CsProjs");
+            Log.Information(" -- Search all CsProjs");
+            var csProjFiles = csprojsFileService.GetAllCsProjs(appSettings.Path);
+
+            Log.Information(" -- Scan packages in CsProjs");
             csProjFiles.ToList().ForEach(csprojPath => csprojsFileService.ScanPackagesFromCsProj(csprojPath, packages));
 
-            Console.WriteLine(" -- Packages and versions");
-            packages.ToList().ForEach(x => Console.WriteLine($"        {x.Key} {string.Join(",", x.Value)}"));
+            Log.Information(" -- Packages and versions");
+            packages.ToList().ForEach(x => Log.Information($"        {x.Key} {string.Join(",", x.Value)}"));
 
-            Console.WriteLine(" -- Update dependency.props");
+            Log.Information(" -- Update dependency.props");
             dependenciesFileService.WriteToFile(dependenciesFile, packages);
         }
 
-        private static string GetPath(string[] args)
+        private static void Initialize(string[] args)
         {
-            var path = string.Empty;
-            if (args.Any())
-            {
-                path = args[0];
-            }
+            Log.Logger = new LoggerConfiguration()
+                                .WriteTo
+                                .Console(Serilog.Events.LogEventLevel.Information)
+                                .CreateLogger();
+            var switchMappings = new Dictionary<string, string>()
+             {
+                 { "--p", "Path" },
+             };
 
-            if (path.ToCharArray()[path.Length - 1] != '/') path += "/";
-            return path;
+            var builder = new ConfigurationBuilder()
+                                .AddCommandLine(args, switchMappings)
+                                .Build();
+            appSettings = builder.Get<AppSettings>() ?? new AppSettings();
+
         }
     }
 }

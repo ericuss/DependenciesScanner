@@ -1,5 +1,6 @@
 ﻿namespace dependenciesScanner.Services
 {
+    using Serilog;
     using System;
     using System.Collections.Generic;
     using System.IO;
@@ -15,12 +16,12 @@
 
             if (files.Any())
             {
-                files.ToList().ForEach(x => Console.WriteLine($"        {fileName} found: {x}"));
+                files.ToList().ForEach(x => Log.Information($"        {fileName} found: {x}"));
                 result = files.ToList();
             }
             else if (createFile != null)
             {
-                Console.WriteLine($"        Creating {fileName}" );
+                Log.Information($"        Creating {fileName}" );
                 result.Add(createFile(sourcePath, fileName));
             }
 
@@ -42,7 +43,7 @@
         {
             var package = new Models.PackageScannModel(this.GetParametersFromLine(line));
 
-            Console.WriteLine($"        Package founded => {package?.Name} {package?.Version}");
+            Log.Information($"        Package founded => {package?.Name} {package?.Version}");
             if (!packages.ContainsKey(package.Name)) packages.Add(package.Name, new List<string> { package.Version });
             else if (!packages[package.Name].Contains(package.Version)) packages[package.Name].Add(package.Version);
         }
