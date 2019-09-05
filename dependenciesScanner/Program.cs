@@ -8,9 +8,9 @@
 
     class Program
     {
-        // const string path = ".";
+        const string path = ".";
         // const string path = "../../../../src/";
-        const string path = "../src/";
+        // const string path = "../src/";
         private static DirectoryBuildPropsFileService directoryBuildFileService => new DirectoryBuildPropsFileService();
         private static DependenciesPropsFileService dependenciesFileService => new DependenciesPropsFileService();
         private static CsProjFileService csprojsFileService => new CsProjFileService();
