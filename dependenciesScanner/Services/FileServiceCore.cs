@@ -27,7 +27,7 @@
             return result;
         }
 
-        protected List<string> GetParametersFromLine(string line)
+        protected virtual List<string> GetParametersFromLine(string line)
         {
             string pattern = "\"[\\s\\S]*?\"";
             Regex r = new Regex(pattern, RegexOptions.IgnoreCase);

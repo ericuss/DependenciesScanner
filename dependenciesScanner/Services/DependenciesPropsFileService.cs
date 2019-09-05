@@ -4,12 +4,13 @@
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
+    using System.Text.RegularExpressions;
 
     public class DependenciesPropsFileService : FileServiceCore
     {
         private const string dependenciesFileName = "dependencies.props";
         private const string nestedDirectoryOfdependenciesFile = "_build";
-        private Func<string, bool> DependenciesFilter = line => line.Contains("PackageReference");
+        private Func<string, bool> DependenciesFilter = line => line.Contains("_Package_Version");
         private Func<string, string> MapLineDependency = line => line
                                                                     .Replace("_Package_Version", string.Empty)
                                                                     .Replace("_", ".");
@@ -21,7 +22,8 @@
         public string SearchDependencyPropsAndCreateIfNotExist(string sourcePath)
         {
             var directoryOfFile = $"./{nestedDirectoryOfdependenciesFile}";
-            if(!Directory.Exists(directoryOfFile)){
+            if (!Directory.Exists(directoryOfFile))
+            {
                 Directory.CreateDirectory(directoryOfFile);
             }
 
@@ -40,7 +42,7 @@
             File.WriteAllText(filePath, content);
             return filePath;
         }
-        public  void WriteToFile(string dependenciesFilePath, Dictionary<string, List<string>> packages)
+        public void WriteToFile(string dependenciesFilePath, Dictionary<string, List<string>> packages)
         {
             var lines = packages
                         .Select(package =>
@@ -73,6 +75,15 @@
 
             contentOfDependencies.ForEach(x => Console.WriteLine(x));
             File.WriteAllLines(dependenciesFilePath, contentOfDependencies);
+        }
+
+
+        protected override List<string> GetParametersFromLine(string line)
+        {
+            line = line.Trim();
+            line = line.Substring(1, line.Length - 1);
+            var list = (new List<string>() { line.Split('>')[0] }).Concat(line.Split('>')[1].Split("</")).ToList();
+            return list;
         }
     }
 }
